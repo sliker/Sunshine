@@ -1,8 +1,10 @@
 package co.davidvu.sunshine.app;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
 import android.os.Bundle;
 import android.text.format.Time;
@@ -41,6 +43,7 @@ public class ForecastFragment extends Fragment {
 
     private final String LOG_TAG = ForecastFragment.class.getSimpleName();
     private ArrayAdapter<String> mForecastAdapter;
+    private String mMetrics;
 
     public ForecastFragment() {
     }
@@ -56,17 +59,7 @@ public class ForecastFragment extends Fragment {
                              Bundle savedInstanceState) {
         View viewRoot = inflater.inflate(R.layout.fragment_main, container, false);
 
-        String[] forecastArray = {
-                "Today - Sunny - 84/64",
-                "Tomorrow - Foggy - 86/60",
-                "Weds - Cloudy - 70/54",
-                "Thurs - Asteroids - 60/74",
-                "Fri - Heavy rain - 80/63",
-                "Sat - Sunny - 80/61",
-                "Sun - Cloudy - 80/62"
-        };
-
-        List<String> weekForecast = new ArrayList<String>(Arrays.asList(forecastArray));
+        List<String> weekForecast = new ArrayList<String>(Arrays.<String>asList());
 
         mForecastAdapter =
                 new ArrayAdapter<String>(
@@ -85,6 +78,12 @@ public class ForecastFragment extends Fragment {
         });
 
         return viewRoot;
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        updateWeather();
     }
 
     public class FetchWeatherTask extends AsyncTask<String, Void, String[]> {
@@ -125,7 +124,7 @@ public class ForecastFragment extends Fragment {
                         .appendPath("daily")
                         .appendQueryParameter("q", city[0])
                         .appendQueryParameter("mode", "json")
-                        .appendQueryParameter("units", "metric")
+                        .appendQueryParameter("units", mMetrics)
                         .appendQueryParameter("cnt", "7");
 //                URL url = new URL("http://api.openweathermap.org/data/2.5/forecast/daily?q=Medellin&mode=json&units=metric&cnt=7");
 
@@ -279,6 +278,19 @@ public class ForecastFragment extends Fragment {
 
     }
 
+    private void updateWeather() {
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getActivity());
+        String location = sharedPreferences.getString(getString(R.string.pref_location_key),
+                getString(R.string.pref_location_default_value));
+        mMetrics = sharedPreferences.getString(getString(R.string.pref_units_key),
+                getString(R.string.pref_units_default));
+
+        Log.d(LOG_TAG, "Location: " + location);
+        Log.d(LOG_TAG, "Metrics: " + mMetrics);
+        FetchWeatherTask weatherDataTask = new FetchWeatherTask();
+        weatherDataTask.execute(location, null, null);
+    }
+
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         inflater.inflate(R.menu.menu_forecastfragment, menu);
@@ -289,8 +301,7 @@ public class ForecastFragment extends Fragment {
         int id = item.getItemId();
 
         if (id == R.id.action_refresh) {
-            FetchWeatherTask weatherDataTask = new FetchWeatherTask();
-            weatherDataTask.execute("London", null, null);
+            updateWeather();
 
             return true;
         }

@@ -4,4 +4,11 @@
     tools:context="co.davidvu.sunshine.app.DetailActivity">
     <item android:id="@+id/action_settings" android:title="@string/action_settings"
         android:orderInCategory="100" app:showAsAction="never" />
+
+    <item
+        app:showAsAction="ifRoom"
+        android:id="@+id/menu_item_share"
+        android:title="Share"
+        app:actionProviderClass="android.support.v7.widget.ShareActionProvider"
+        />
 </menu>
